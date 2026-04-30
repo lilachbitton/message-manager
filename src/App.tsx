@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ALL_TEMPLATES } from './templates';
 
 // ==================== TYPES ====================
 
@@ -12,7 +13,7 @@ interface ShortLink {
 interface MessageTemplate {
   id: string;
   name: string;
-  relativeDay: number;
+  relativeDay: number | null;
   relativeLabel: string;
   sendTime: string;
   channel: Channel;
@@ -129,148 +130,7 @@ const DEFAULT_LINKS: ShortLink[] = [
   { id: genId(), description: 'דף נחיתה זמני לתכנית', shortUrl: 'https://B-E.short.gy/GoBig' },
 ];
 
-const DEFAULT_TEMPLATES: MessageTemplate[] = [
-  // 5 ימים לפני
-  {
-    id: genId(), name: 'מייל מותאם 1', relativeDay: -5,
-    relativeLabel: '5 ימים לפני האתגר',
-    sendTime: '07:03', channel: 'email',
-    emailSubject: 'במלחמת 12 הימים עם איראן הכנסנו מליון שקל',
-    content: 'במלחמת 12 הימים עם איראן הכנסנו מיליון שקל.\n\nבזמן שכולם (כולל אותנו) רצו למקלטים,\nניסו להשלים שעות שינה\nוחיכו שהמלחמה תיגמר,\nהעסק שלנו שבר שיאים.\n\nהעסק שלנו הכניס בפעם הראשונה מיליון שקל בשבוע.\nסולדאאוט לתכנית פרימיום במהלך אחד.\n\nלא ברדיפה אחרי לקוחות.\nלא בטיקטוק.\nולא בהשתעבדות לשיווק ולמכירות.\n\n(למעשה 80% מהשנה אנחנו בכלל לא עושות שיווק וגם לא מכירות)\n\nבאמצעות שיווק חווייתי.\n\nשיווק שגורם למסות של לקוחות פוטנציאליים\nלהכיר אותך,\nלהעריך אותך,\nולהבין שהם חייבים אותך.\n\nזה שיווק שמייצר הכנסות שיא בשבוע אחד💃',
-    targetAudience: 'כל הנמענים מלבד "לא פתחו שנה" ומלבד המותאמים אישית',
-    notes: 'מיילים - הותאם לאתגר. ווצאפ וסמס - להתאים עם קודים',
-  },
-  {
-    id: genId(), name: 'וואטסאפ מותאם 1', relativeDay: -5,
-    relativeLabel: '5 ימים לפני האתגר',
-    sendTime: '10:53', channel: 'whatsapp_personal',
-    content: 'הי {{first_name}},\nהגיע הזמן לחזור לתת בראש בעסק שלך אחרי כל מה שעברנו לאחרונה!\nביום ראשון אנחנו חושפות את שיטת השיווק שהכניסה לנו\n4 מיליון ש"ח - בשנה אחת.\n(בלי רשתות חברתיות, ובלי לשווק ולמכור כל הזמן!)\n\nוזה קורה במיני־קורס לייב, חינם.\n\nאז במקום פוסטים, סטורי, או לרדוף אחרי לידים קרים -\nאנחנו מראות איך בונים מהלך שיווקי עוצמתי שמכניס\nעשרות עד מאות אלפי שקלים (ואפילו מיליון) בשבוע.\n\nאם יש לך קורסים למלא, או שירות פרימיום (5,000 ש"ח ומעלה)\nואין לך כוח לרשתות חברתיות - אז חובה להיות שם!!!\n\nהקורס החינמי נפתח ביום ראשון -\nאפילו לא צריך להרשם. רק להיכנס לקבוצת הוואטסאפ כאן:\n👇\n{{gaf_4561729}}\n\nנתראה בפנים!',
-    targetAudience: 'וואטסאפ אישי + SMS',
-  },
-  // 3 ימים לפני
-  {
-    id: genId(), name: 'מייל מותאם 2', relativeDay: -3,
-    relativeLabel: '3 ימים לפני האתגר',
-    sendTime: '07:30', channel: 'email',
-    emailSubject: 'שקרניות חרטטניות ונוכלות',
-    content: 'בימים האחרונים אנחנו מקבלות\nלא מעט בוז ושנאה בתגובה למודעות שלנו,\nמאנשים שטוענים שאנחנו "מחרטטות", "שקרניות",\nוממציאות מספרי הכנסות "לא הגיוניים".\n\nאז למה כל כך קשה להאמין שאפשר להגיע לתוצאות גדולות בעסק?\nואיך משיגים תוצאות ש״נשמעות לא הגיוניות״?\n\n▪️ שי הכניסה 84,000 ש״ח בשבוע\n▪️ תמיר הכניס מיליון ש״ח (!) בשני מהלכים\n▪️ ועוד תוצאות שנשמעות כמעט לא אמיתיות\n\nאבל האמת?\nהן מאוד הגיוניות – כשעובדים עם שיטה נכונה.\n\nביום ראשון אנחנו פותחות את\nמיני־קורס "מהלך המיליון" 🔥\n(4 ימים, ראשון-רביעי, ב 10:00, מתחילים בראשון הקרוב!)',
-    targetAudience: 'כל הנמענים מלבד "לא פתחו שנה" ומלבד המותאמים אישית',
-  },
-  {
-    id: genId(), name: 'וואטסאפ מותאם 2', relativeDay: -3,
-    relativeLabel: '3 ימים לפני האתגר',
-    sendTime: '10:00', channel: 'whatsapp_personal',
-    content: 'בימים האחרונים אנחנו מקבלות לא מעט תגובות קשות למודעות שלנו,\nמאנשים שטוענים שאנחנו ממציאות מספרים ו"תוצאות לא הגיוניות".\n\nאז איך באמת משיגים תוצאות שנשמעות לא הגיוניות?\n\nבסרטון המצורף תראו תגובות אמיתיות מהרשת של משתתפי המיני קורס הקודם.\n\nביום ראשון נפתח מיני קורס "מהלך המיליון",\n4 ימים, ראשון עד רביעי, בשעה 10:00.\n\nלסרטון העדויות:\nhttps://vimeo.com/1157133876?fl=pl&fe=sh',
-    notes: 'לא לשכוח לצרף סרטון של צילומי מסך עדויות',
-  },
-  // 1 יום לפני
-  {
-    id: genId(), name: 'מייל מותאם 3 (מוצ"ש)', relativeDay: -1,
-    relativeLabel: 'מוצאי שבת - יום לפני האתגר',
-    sendTime: '20:30', channel: 'email',
-    emailSubject: 'מחר מתחילים - מהלך המיליון',
-    content: 'ודקה לפני שאנחנו מתחילים,\nאני רוצה להתוודות – אפרת ואני מאוד מאוד מאוד מתרגשות לקראת מחר.\nכי בשבילנו, ה־4 ימים הקרובים הם הזדמנות לתת לכם את הטוב ביותר שלנו.\n\nומחר ב־10:00 זה מתחיל 💃💃💃\n\n4 ימים שבהם נפתח לכם מסלול חדש שיראה לכם דרך אחרת לשווק ולמכור.\nדרך שתתן לכם לשווק בהתלהבות ותראה לכם איך להתחיל לשחק בליגה אחרת.',
-  },
-  // יום 1 - בוקר
-  {
-    id: genId(), name: 'מייל בוקר יום 1', relativeDay: 0,
-    relativeLabel: 'בוקר יום 1 לאתגר',
-    sendTime: '09:40', channel: 'email',
-    emailSubject: 'היום ב 10:00 מתחילים! מהלך המיליון',
-    content: 'היום ב 10:00 מתחילים!\nמיני-קורס "מהלך המיליון"!\nהמיני קורס שיהפוך את 2026 לשנת הזינוק שלך.\n\nהיום נתחיל כבר לשחק בליגה אחרת לגמרי\nונצלול ישר לתכלס! - מהו שיווק חווייתי, איך עושים עשרות ומאות אלפי שקלים בשבוע אחד ואיך ליצור רעיון מנצח בשבילך.\n\nאנחנו מתחילות ב־10:00 בול\nכדאי לא לאחר 😉\n\nזה הלינק שלך לכניסה לשידור החי (בעשר!):\n{{לינק זום}}',
-  },
-  {
-    id: genId(), name: 'וואטסאפ קבוצתי - יום 1 בוקר', relativeDay: 0,
-    relativeLabel: 'בוקר יום 1 לאתגר',
-    sendTime: '09:55', channel: 'whatsapp_group',
-    content: 'יאללה,\nמתחילים!!\n"מהלך המיליון" יוצא לדרך💃💃\n\nוהיום:\n"איך תכל\'ס ליצור קונספט שימשוך אליך מאות לקוחות פוטנציאליים לשיגור החווייתי שלך".\n\nמתחילים בול ב 10:00 וצוללים ישר לתוכן.\n\nזה הלינק שלך:\n{{לינק זום}}',
-  },
-  {
-    id: genId(), name: 'סיכום + הקלטה יום 1', relativeDay: 0,
-    relativeLabel: 'צהריים יום 1 לאתגר',
-    sendTime: '12:00', channel: 'whatsapp_group',
-    content: 'פששש...\n\nאיזה שידור היה לנו היום🔥\nכמעט אלף משתתפים.\nמאות קונספטים מדליקים שנוצרו בלייב.\nאסימונים אדירים שנפלו פה לאנשים על איך קופצים קדימה.\n\nאם עוד לא ראית את השידור, יש הקלטה!!!\nההקלטה היא לזמן מוגבל ותיעלם מחר בשעה 10:00.\n\nזה הלינק שלך:\n{{לינק הקלטות}}\n\nודבר אחרון: יש לנו הפתעה 🎁🎁\nהיום בשעה 20:30.\nמפגש מיוחד עם צוות יועצות הלימודים שלנו.',
-  },
-  // יום 2 - בוקר
-  {
-    id: genId(), name: 'מייל בוקר יום 2', relativeDay: 1,
-    relativeLabel: 'בוקר יום 2 לאתגר',
-    sendTime: '09:50', channel: 'email',
-    emailSubject: 'הנוסחה ל-200 מיליון. איך למכור בלי לשכנע?',
-    content: 'פששש.... איזה בוקר מושלם לזינוק עסקי💃💃\n\nבוקר שבו אני הולכת להראות לכם איך להיפטר מהתנגדויות ואיך להפסיק לשמוע:\n"יקר לי", "אני צריך לחשוב על זה", ו"נדבר אחר כך"\n\nהיום ב-10:00 זה נגמר!\n\nאני הולכת ללמד אתכם איך להניע את הלקוח לקנייה!\nאיך ליצור ללקוח 4 אמונות שיהפכו את הקנייה למובנת מאליה.\n\nזה הלינק כניסה שלך:\n{{לינק זום}}',
-  },
-  {
-    id: genId(), name: 'וואטסאפ קבוצתי - יום 2 בוקר', relativeDay: 1,
-    relativeLabel: 'בוקר יום 2 לאתגר',
-    sendTime: '09:55', channel: 'whatsapp_group',
-    content: 'יאללה, מ ת ח י ל י ם!\n\nאיך להניע את הלקוח לקנייה!\nהנוסחה ל-200 מיליון. איך למכור בלי לשכנע?\nואיך ליישם את זה בשיווק חווייתי.\n\nזה הלינק כניסה שלך:\n{{לינק זום}}',
-  },
-  {
-    id: genId(), name: 'סיכום יום 2', relativeDay: 1,
-    relativeLabel: 'צהריים יום 2 לאתגר',
-    sendTime: '12:00', channel: 'whatsapp_group',
-    content: 'חברים,\n\nאיזו התחלה פגז הייתה לנו.\nאבל.... זו רק ההתחלה.\n\nמהיום, מעלים קצב💃\nארגנו לכם ערימה של הפתעות ועדכנו את הלוז.\n\nזה הלינק להקלטות מהיום:\n{{לינק הקלטה}}',
-  },
-  // יום 3
-  {
-    id: genId(), name: 'מייל בוקר יום 3', relativeDay: 2,
-    relativeLabel: 'בוקר יום 3 לאתגר',
-    sendTime: '09:50', channel: 'email',
-    emailSubject: 'יום 3 - מהלך המיליון - 16 השלבים',
-    content: 'היום יום 3 במיני קורס "מהלך המיליון"!\nהיום נצלול לתוך 16 השלבים של שיווק חווייתי - מפת הדרכים המלאה.\n\nמתחילים ב-10:00.\n\nזה הלינק שלך:\n{{לינק זום}}',
-  },
-  // יום 4 (סיכום)
-  {
-    id: genId(), name: 'מייל יום 4 - שידור הסיכום', relativeDay: 3,
-    relativeLabel: 'בוקר יום 4 לאתגר (סיכום)',
-    sendTime: '09:45', channel: 'email',
-    emailSubject: 'היום השידור הגדול - מהלך המיליון',
-    content: 'היום השידור הגדול והמסכם!\nשלוש שעות של עוצמה.\n\nנתראה ב 10:00.\n\nשימו לב: היום אין הקלטה!\nאז חובה להיות בלייב.',
-  },
-  {
-    id: genId(), name: 'הקלטות - אחה"צ יום 4', relativeDay: 3,
-    relativeLabel: 'אחה"צ יום 4 (אחרי השידור)',
-    sendTime: '15:00', channel: 'email',
-    emailSubject: 'ההקלטות מוכנות! מהלך המיליון',
-    content: 'ההקלטה של השידור המסכם עלתה!\nזמינה לזמן מוגבל.\n\nלהקלטה:\n{{לינק הקלטות}}',
-  },
-  // יום אחרי
-  {
-    id: genId(), name: 'מייל יום אחרי - בוקר', relativeDay: 4,
-    relativeLabel: 'יום אחרי סיום האתגר (בוקר)',
-    sendTime: '07:00', channel: 'email',
-    emailSubject: 'מה עכשיו? הצעד הבא שלך',
-    content: 'האתגר נגמר, אבל המסע שלך רק מתחיל.\n\nאם הרגשת שמשהו זז לך בפנים ב-4 הימים האלה,\nזה הזמן לדבר איתנו.\n\nלהגשת מועמדות:\n{{לינק מועמדות}}',
-  },
-  {
-    id: genId(), name: 'וואטסאפ יום אחרי', relativeDay: 4,
-    relativeLabel: 'יום אחרי סיום האתגר',
-    sendTime: '08:00', channel: 'whatsapp_personal',
-    content: 'הי {{first_name}},\nאיך היה לך באתגר?\nאם הרגשת שמשהו זז, אשמח לדבר איתך.',
-  },
-  {
-    id: genId(), name: 'מייל יום אחרי - אחה"צ', relativeDay: 4,
-    relativeLabel: 'יום אחרי סיום האתגר (אחה"צ)',
-    sendTime: '14:00', channel: 'email',
-    emailSubject: 'ההזדמנות נסגרת',
-    content: 'תזכורת: הזדמנות ההצטרפות לתכנית הפרימיום שלנו נסגרת בקרוב.\n\nלפרטים והגשת מועמדות:\n{{לינק מועמדות}}',
-  },
-  // ימים אחרי
-  {
-    id: genId(), name: 'מייל - יום ראשון אחרי האתגר (בוקר)', relativeDay: 7,
-    relativeLabel: 'יום ראשון אחרי האתגר',
-    sendTime: '08:00', channel: 'email',
-    emailSubject: 'הזמנה אחרונה',
-    content: 'הזמנה אחרונה להצטרף לתכנית.\nההרשמה נסגרת היום בערב.',
-  },
-  {
-    id: genId(), name: 'מייל - יום ראשון אחרי (ערב)', relativeDay: 7,
-    relativeLabel: 'יום ראשון אחרי האתגר (ערב)',
-    sendTime: '18:00', channel: 'email',
-    emailSubject: 'נסגר הערב',
-    content: 'הערב בחצות נסגרת ההרשמה לתכנית.\nזו האפשרות האחרונה.',
-  },
-];
+const DEFAULT_TEMPLATES: MessageTemplate[] = ALL_TEMPLATES as MessageTemplate[];
 
 // ==================== STORAGE ====================
 
@@ -484,14 +344,124 @@ const MessageEditorModal: React.FC<{
 
 // ==================== DASHBOARD TAB ====================
 
+const REQUIRED_CHANNELS: Channel[] = ['email', 'whatsapp_personal', 'whatsapp_group'];
+const ALL_CHANNELS_LIST: Channel[] = ['email', 'whatsapp_personal', 'whatsapp_group', 'sms'];
+
+const ChannelCoverage: React.FC<{ messages: ScheduledMessage[] }> = ({ messages }) => {
+  const present = new Set(messages.map(m => m.channel));
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {ALL_CHANNELS_LIST.map(ch => {
+        const has = present.has(ch);
+        const required = REQUIRED_CHANNELS.includes(ch);
+        let cls = '';
+        if (has) cls = 'bg-green-100 text-green-700 border-green-300';
+        else if (required) cls = 'bg-red-100 text-red-700 border-red-300 ring-1 ring-red-300';
+        else cls = 'bg-gray-100 text-gray-500 border-gray-200';
+        return (
+          <span key={ch} className={`text-xs px-2 py-0.5 rounded-full border ${cls}`}
+            title={has ? 'יש מסר בערוץ הזה' : (required ? 'חסר! ערוץ חובה' : 'אין בערוץ הזה')}>
+            {has ? '✓' : '✗'} {CHANNEL_ICONS[ch]} {CHANNEL_LABELS[ch]}
+          </span>
+        );
+      })}
+    </div>
+  );
+};
+
+const TemplatePickerModal: React.FC<{
+  templates: MessageTemplate[];
+  forDate: string;
+  forRelativeDay: number | null;
+  onPick: (tmpl: MessageTemplate, makePermanent: boolean) => void;
+  onClose: () => void;
+}> = ({ templates, forDate, forRelativeDay, onPick, onClose }) => {
+  const [filterChannel, setFilterChannel] = useState<Channel | 'all'>('all');
+  const [filterScope, setFilterScope] = useState<'unscheduled' | 'all'>('unscheduled');
+  const [search, setSearch] = useState('');
+
+  const filtered = templates.filter(t => {
+    if (filterScope === 'unscheduled' && t.relativeDay !== null && t.relativeDay !== undefined) return false;
+    if (filterChannel !== 'all' && t.channel !== filterChannel) return false;
+    if (search && !(t.name + ' ' + t.content).toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const handlePick = (t: MessageTemplate) => {
+    const wasUnscheduled = t.relativeDay === null || t.relativeDay === undefined;
+    let makePermanent = false;
+    if (wasUnscheduled && forRelativeDay !== null) {
+      makePermanent = confirm(`האם לקבוע את הטמפלייט "${t.name}"\nל-${relativeDayLabel(forRelativeDay)} בקביעות?\n\n(לחיצה על OK תעדכן את הטמפלייט במאגר ליום הזה)`);
+    }
+    onPick(t, makePermanent);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-2xl flex items-center justify-between z-10">
+          <div>
+            <h2 className="text-xl font-bold">📥 הוסף מסר ליום {formatDateHebrew(forDate)}</h2>
+            <p className="text-sm text-gray-500 mt-1">בחירת טמפלייט מהמאגר</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+        </div>
+        <div className="p-6">
+          <div className="flex flex-wrap gap-3 mb-4">
+            <select value={filterScope} onChange={e => setFilterScope(e.target.value as any)}
+              className="border rounded-lg px-3 py-2 text-sm bg-white">
+              <option value="unscheduled">רק לא משובצים</option>
+              <option value="all">כל הטמפלייטים</option>
+            </select>
+            <select value={filterChannel} onChange={e => setFilterChannel(e.target.value as any)}
+              className="border rounded-lg px-3 py-2 text-sm bg-white">
+              <option value="all">כל הערוצים</option>
+              {Object.entries(CHANNEL_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="🔍 חיפוש..." className="border rounded-lg px-3 py-2 text-sm flex-1 min-w-[150px]" />
+          </div>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {filtered.length === 0 && (
+              <div className="text-center py-10 text-gray-500">אין טמפלייטים תואמים</div>
+            )}
+            {filtered.map(t => (
+              <button key={t.id} onClick={() => handlePick(t)}
+                className="w-full text-right p-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors block">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="font-bold">{t.name}</span>
+                  <ChannelBadge channel={t.channel} />
+                  <span className="text-xs text-gray-500">⏰ {t.sendTime}</span>
+                  {t.relativeDay === null || t.relativeDay === undefined ? (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">לא משובץ</span>
+                  ) : (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{relativeDayLabel(t.relativeDay)}</span>
+                  )}
+                </div>
+                {t.emailSubject && <div className="text-sm text-gray-600 mb-1">📧 {t.emailSubject}</div>}
+                <div className="text-sm text-gray-600 line-clamp-2 whitespace-pre-wrap">{t.content?.substring(0, 200)}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const DashboardTab: React.FC<{
   challenge: Challenge | null;
   links: ShortLink[];
+  templates: MessageTemplate[];
   onUpdateChallenge: (c: Challenge) => void;
-}> = ({ challenge, links, onUpdateChallenge }) => {
+  onUpdateTemplates: (t: MessageTemplate[]) => void;
+}> = ({ challenge, links, templates, onUpdateChallenge, onUpdateTemplates }) => {
   const [editingMsg, setEditingMsg] = useState<ScheduledMessage | null>(null);
   const [filterChannel, setFilterChannel] = useState<Channel | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [pickerForDate, setPickerForDate] = useState<{ date: string; relativeDay: number | null } | null>(null);
 
   if (!challenge) return (
     <div className="text-center py-20">
@@ -610,16 +580,26 @@ const DashboardTab: React.FC<{
       </div>
 
       <div className="space-y-6">
-        {sortedDates.map(date => (
+        {sortedDates.map(date => {
+          const dayMessages = grouped[date];
+          const relDay = dayMessages[0]?.relativeDay ?? null;
+          return (
           <div key={date}>
-            <div className="flex items-center gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
               <div className="bg-indigo-100 text-indigo-800 px-4 py-1.5 rounded-full text-sm font-bold">
                 {formatDateHebrew(date)}
               </div>
-              {grouped[date][0]?.relativeLabel && (
-                <span className="text-sm text-gray-500">({grouped[date][0].relativeLabel})</span>
+              {dayMessages[0]?.relativeLabel && (
+                <span className="text-sm text-gray-500">({dayMessages[0].relativeLabel})</span>
               )}
+              <button onClick={() => setPickerForDate({ date, relativeDay: relDay })}
+                className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1 rounded-full border border-blue-200">
+                + הוסף מטמפלייט
+              </button>
               <div className="flex-1 border-t border-gray-200" />
+            </div>
+            <div className="mb-3">
+              <ChannelCoverage messages={dayMessages} />
             </div>
             <div className="grid gap-3">
               {grouped[date].sort((a, b) => (a.sendTime || '').localeCompare(b.sendTime || '')).map(msg => (
@@ -666,7 +646,8 @@ const DashboardTab: React.FC<{
               ))}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {filtered.length === 0 && (
@@ -678,6 +659,39 @@ const DashboardTab: React.FC<{
       {editingMsg && (
         <MessageEditorModal message={editingMsg} links={links}
           onSave={handleUpdateMsg} onClose={() => setEditingMsg(null)} />
+      )}
+
+      {pickerForDate && (
+        <TemplatePickerModal templates={templates}
+          forDate={pickerForDate.date}
+          forRelativeDay={pickerForDate.relativeDay}
+          onClose={() => setPickerForDate(null)}
+          onPick={(t, makePermanent) => {
+            const newMsg: ScheduledMessage = {
+              id: genId(),
+              templateId: t.id,
+              name: t.name,
+              date: pickerForDate.date,
+              sendTime: t.sendTime,
+              channel: t.channel,
+              emailSubject: t.emailSubject,
+              content: t.content,
+              status: 'draft',
+              notes: t.notes,
+              relativeDay: pickerForDate.relativeDay ?? 0,
+              relativeLabel: pickerForDate.relativeDay !== null ? relativeDayLabel(pickerForDate.relativeDay) : 'מותאם',
+              targetAudience: t.targetAudience,
+            };
+            onUpdateChallenge({ ...challenge, messages: [...challenge.messages, newMsg] });
+
+            if (makePermanent && pickerForDate.relativeDay !== null) {
+              const updatedT = { ...t, relativeDay: pickerForDate.relativeDay, relativeLabel: relativeDayLabel(pickerForDate.relativeDay) };
+              onUpdateTemplates(templates.map(x => x.id === t.id ? updatedT : x));
+            }
+
+            setPickerForDate(null);
+          }}
+        />
       )}
     </div>
   );
@@ -695,12 +709,17 @@ const TemplatesTab: React.FC<{
 
   const filtered = templates.filter(t => filterChannel === 'all' || t.channel === filterChannel);
 
-  const grouped = filtered.reduce<Record<number, MessageTemplate[]>>((acc, t) => {
-    (acc[t.relativeDay] = acc[t.relativeDay] || []).push(t);
+  const grouped = filtered.reduce<Record<string, MessageTemplate[]>>((acc, t) => {
+    const key = t.relativeDay === null || t.relativeDay === undefined ? 'unscheduled' : String(t.relativeDay);
+    (acc[key] = acc[key] || []).push(t);
     return acc;
   }, {});
 
-  const sortedDays = Object.keys(grouped).map(Number).sort((a, b) => a - b);
+  const sortedDays = Object.keys(grouped).sort((a, b) => {
+    if (a === 'unscheduled') return 1;
+    if (b === 'unscheduled') return -1;
+    return Number(a) - Number(b);
+  });
 
   const handleSave = (updated: MessageTemplate) => {
     onUpdateTemplates(templates.map(t => t.id === updated.id ? updated : t));
@@ -747,16 +766,24 @@ const TemplatesTab: React.FC<{
       </div>
 
       <div className="space-y-6">
-        {sortedDays.map(day => (
-          <div key={day}>
+        {sortedDays.map(dayKey => {
+          const day = dayKey === 'unscheduled' ? null : Number(dayKey);
+          const headerClass = day === null
+            ? 'bg-gray-200 text-gray-700'
+            : day < 0 ? 'bg-orange-100 text-orange-800'
+            : day <= 3 ? 'bg-green-100 text-green-800'
+            : 'bg-purple-100 text-purple-800';
+          const headerLabel = day === null ? `📥 לא משובצים (${grouped[dayKey].length})` : relativeDayLabel(day);
+          return (
+          <div key={dayKey}>
             <div className="flex items-center gap-3 mb-3 flex-wrap">
-              <div className={`px-4 py-1.5 rounded-full text-sm font-bold ${day < 0 ? 'bg-orange-100 text-orange-800' : day <= 3 ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
-                {relativeDayLabel(day)}
+              <div className={`px-4 py-1.5 rounded-full text-sm font-bold ${headerClass}`}>
+                {headerLabel}
               </div>
               <div className="flex-1 border-t border-gray-200" />
             </div>
             <div className="grid gap-3">
-              {grouped[day].sort((a, b) => (a.sendTime || '').localeCompare(b.sendTime || '')).map(tmpl => (
+              {grouped[dayKey].sort((a, b) => (a.sendTime || '').localeCompare(b.sendTime || '')).map(tmpl => (
                 <div key={tmpl.id} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -790,7 +817,8 @@ const TemplatesTab: React.FC<{
               ))}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {editing && (
@@ -937,12 +965,15 @@ const SettingsTab: React.FC<{
 
   const previewMessages = useMemo(() => {
     if (!date) return [];
-    return templates.map(t => ({
-      ...t,
-      actualDate: addDays(date, t.relativeDay),
-      dateLabel: formatDateHebrew(addDays(date, t.relativeDay)),
-    })).sort((a, b) => a.actualDate.localeCompare(b.actualDate) || a.sendTime.localeCompare(b.sendTime));
+    return templates
+      .filter(t => t.relativeDay !== null && t.relativeDay !== undefined)
+      .map(t => ({
+        ...t,
+        actualDate: addDays(date, t.relativeDay as number),
+        dateLabel: formatDateHebrew(addDays(date, t.relativeDay as number)),
+      })).sort((a, b) => a.actualDate.localeCompare(b.actualDate) || a.sendTime.localeCompare(b.sendTime));
   }, [date, templates]);
+  const unscheduledCount = templates.filter(t => t.relativeDay === null || t.relativeDay === undefined).length;
 
   const handleCreate = () => {
     if (!name || !date) return;
@@ -1024,21 +1055,23 @@ const App: React.FC = () => {
   useEffect(() => { saveState('mm_challenge', challenge); }, [challenge]);
 
   const handleCreateChallenge = useCallback((name: string, startDate: string) => {
-    const messages: ScheduledMessage[] = templates.map(t => ({
-      id: genId(),
-      templateId: t.id,
-      name: t.name,
-      date: addDays(startDate, t.relativeDay),
-      sendTime: t.sendTime,
-      channel: t.channel,
-      emailSubject: t.emailSubject,
-      content: t.content,
-      status: 'draft' as const,
-      notes: t.notes,
-      relativeDay: t.relativeDay,
-      relativeLabel: t.relativeLabel || relativeDayLabel(t.relativeDay),
-      targetAudience: t.targetAudience,
-    }));
+    const messages: ScheduledMessage[] = templates
+      .filter(t => t.relativeDay !== null && t.relativeDay !== undefined)
+      .map(t => ({
+        id: genId(),
+        templateId: t.id,
+        name: t.name,
+        date: addDays(startDate, t.relativeDay as number),
+        sendTime: t.sendTime,
+        channel: t.channel,
+        emailSubject: t.emailSubject,
+        content: t.content,
+        status: 'draft' as const,
+        notes: t.notes,
+        relativeDay: t.relativeDay as number,
+        relativeLabel: t.relativeLabel || relativeDayLabel(t.relativeDay as number),
+        targetAudience: t.targetAudience,
+      }));
 
     const newChallenge: Challenge = {
       id: genId(), name, startDate, messages,
@@ -1082,7 +1115,8 @@ const App: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         {tab === 'dashboard' && (
-          <DashboardTab challenge={challenge} links={links} onUpdateChallenge={setChallenge} />
+          <DashboardTab challenge={challenge} links={links} templates={templates}
+            onUpdateChallenge={setChallenge} onUpdateTemplates={setTemplates} />
         )}
         {tab === 'templates' && (
           <TemplatesTab templates={templates} links={links} onUpdateTemplates={setTemplates} />

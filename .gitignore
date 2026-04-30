@@ -7,3 +7,8 @@ dist
 .vscode
 .idea
 .vercel
+
+.vercel
+_excel_data.json
+_extract.py
+_generate_templates.py
