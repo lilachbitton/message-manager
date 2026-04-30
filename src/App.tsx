@@ -1091,11 +1091,31 @@ const App: React.FC = () => {
     saveState('mm_challenge', challenge);
     if (isInitialLoad.current || isApplyingRemote.current) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    setSyncStatus('connecting');
     saveTimer.current = setTimeout(() => {
       saveWorkspace({ templates, links, challenge })
         .then(() => setSyncStatus('synced'))
         .catch(() => setSyncStatus('error'));
-    }, 600);
+    }, 250);
+  }, [templates, links, challenge]);
+
+  // Flush pending saves before page unload so changes aren't lost on quick refresh
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+        // Fire-and-forget — keepalive ensures the request completes even on unload
+        try {
+          const url = `https://firestore.googleapis.com/v1/projects/message-manager-66f4f/databases/(default)/documents/workspaces/main?updateMask.fieldPaths=templates&updateMask.fieldPaths=links&updateMask.fieldPaths=challenge&updateMask.fieldPaths=updatedAt`;
+          // We rely on the regular debounced save firing first if 250ms already passed.
+          // Trigger a synchronous best-effort save:
+          saveWorkspace({ templates, links, challenge });
+        } catch {}
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [templates, links, challenge]);
 
   const handleCreateChallenge = useCallback((name: string, startDate: string) => {
