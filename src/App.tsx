@@ -1084,38 +1084,16 @@ const App: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Save to Firestore on local changes (debounced)
+  // Save to Firestore immediately on local changes (no debounce — avoids race conditions on quick refresh)
   useEffect(() => {
     saveState('mm_templates', templates);
     saveState('mm_links', links);
     saveState('mm_challenge', challenge);
     if (isInitialLoad.current || isApplyingRemote.current) return;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
     setSyncStatus('connecting');
-    saveTimer.current = setTimeout(() => {
-      saveWorkspace({ templates, links, challenge })
-        .then(() => setSyncStatus('synced'))
-        .catch(() => setSyncStatus('error'));
-    }, 250);
-  }, [templates, links, challenge]);
-
-  // Flush pending saves before page unload so changes aren't lost on quick refresh
-  useEffect(() => {
-    const onBeforeUnload = () => {
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current);
-        saveTimer.current = null;
-        // Fire-and-forget — keepalive ensures the request completes even on unload
-        try {
-          const url = `https://firestore.googleapis.com/v1/projects/message-manager-66f4f/databases/(default)/documents/workspaces/main?updateMask.fieldPaths=templates&updateMask.fieldPaths=links&updateMask.fieldPaths=challenge&updateMask.fieldPaths=updatedAt`;
-          // We rely on the regular debounced save firing first if 250ms already passed.
-          // Trigger a synchronous best-effort save:
-          saveWorkspace({ templates, links, challenge });
-        } catch {}
-      }
-    };
-    window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    saveWorkspace({ templates, links, challenge })
+      .then(() => setSyncStatus('synced'))
+      .catch(() => setSyncStatus('error'));
   }, [templates, links, challenge]);
 
   const handleCreateChallenge = useCallback((name: string, startDate: string) => {
