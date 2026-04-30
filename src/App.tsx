@@ -1064,19 +1064,20 @@ const App: React.FC = () => {
         if (Array.isArray(data.links) && data.links.length > 0) setLinks(data.links);
         setChallenge(data.challenge ?? null);
         setSyncStatus('synced');
-        // Cache locally
         saveState('mm_templates', data.templates);
         saveState('mm_links', data.links);
         saveState('mm_challenge', data.challenge);
         setTimeout(() => { isApplyingRemote.current = false; }, 50);
       } else {
-        // No remote doc yet — push our defaults
         if (isInitialLoad.current) {
           saveWorkspace({ templates, links, challenge })
             .then(() => setSyncStatus('synced'))
             .catch(() => setSyncStatus('error'));
         }
       }
+      isInitialLoad.current = false;
+    }, () => {
+      setSyncStatus('error');
       isInitialLoad.current = false;
     });
     return () => unsub();

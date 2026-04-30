@@ -24,7 +24,10 @@ export interface WorkspaceData {
   updatedBy?: string;
 }
 
-export function subscribeWorkspace(onChange: (data: WorkspaceData | null) => void) {
+export function subscribeWorkspace(
+  onChange: (data: WorkspaceData | null) => void,
+  onError?: (err: Error) => void
+) {
   return onSnapshot(doc(db, WORKSPACE_PATH), (snap) => {
     if (snap.exists()) {
       onChange(snap.data() as WorkspaceData);
@@ -33,12 +36,18 @@ export function subscribeWorkspace(onChange: (data: WorkspaceData | null) => voi
     }
   }, (err) => {
     console.error('Firestore subscription error:', err);
+    if (onError) onError(err);
   });
 }
 
 export async function saveWorkspace(data: Partial<WorkspaceData>) {
-  await setDoc(doc(db, WORKSPACE_PATH), {
-    ...data,
-    updatedAt: Date.now(),
-  }, { merge: true });
+  try {
+    await setDoc(doc(db, WORKSPACE_PATH), {
+      ...data,
+      updatedAt: Date.now(),
+    }, { merge: true });
+  } catch (e: any) {
+    console.error('Firestore save error:', e?.code, e?.message);
+    throw e;
+  }
 }
