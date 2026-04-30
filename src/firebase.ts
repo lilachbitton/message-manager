@@ -40,12 +40,27 @@ export function subscribeWorkspace(
   });
 }
 
+// Strip undefined values recursively — Firestore rejects undefined fields
+function clean<T>(val: T): T {
+  if (val === undefined) return null as any;
+  if (val === null) return val;
+  if (Array.isArray(val)) return val.map(clean) as any;
+  if (typeof val === 'object') {
+    const out: any = {};
+    for (const [k, v] of Object.entries(val)) {
+      if (v !== undefined) out[k] = clean(v);
+    }
+    return out;
+  }
+  return val;
+}
+
 export async function saveWorkspace(data: Partial<WorkspaceData>) {
   try {
-    await setDoc(doc(db, WORKSPACE_PATH), {
+    await setDoc(doc(db, WORKSPACE_PATH), clean({
       ...data,
       updatedAt: Date.now(),
-    }, { merge: true });
+    }), { merge: true });
   } catch (e: any) {
     console.error('Firestore save error:', e?.code, e?.message);
     throw e;
