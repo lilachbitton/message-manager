@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ALL_TEMPLATES } from './templates';
+import { subscribeWorkspace, saveWorkspace } from './firebase';
 
 // ==================== TYPES ====================
 
@@ -1049,10 +1050,52 @@ const App: React.FC = () => {
   const [templates, setTemplates] = useState<MessageTemplate[]>(() => loadState('mm_templates', DEFAULT_TEMPLATES));
   const [links, setLinks] = useState<ShortLink[]>(() => loadState('mm_links', DEFAULT_LINKS));
   const [challenge, setChallenge] = useState<Challenge | null>(() => loadState('mm_challenge', null));
+  const [syncStatus, setSyncStatus] = useState<'connecting' | 'synced' | 'error' | 'offline'>('connecting');
+  const isInitialLoad = useRef(true);
+  const isApplyingRemote = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => { saveState('mm_templates', templates); }, [templates]);
-  useEffect(() => { saveState('mm_links', links); }, [links]);
-  useEffect(() => { saveState('mm_challenge', challenge); }, [challenge]);
+  // Subscribe to Firestore changes (real-time sync across team)
+  useEffect(() => {
+    const unsub = subscribeWorkspace((data) => {
+      if (data) {
+        isApplyingRemote.current = true;
+        if (Array.isArray(data.templates) && data.templates.length > 0) setTemplates(data.templates);
+        if (Array.isArray(data.links) && data.links.length > 0) setLinks(data.links);
+        setChallenge(data.challenge ?? null);
+        setSyncStatus('synced');
+        // Cache locally
+        saveState('mm_templates', data.templates);
+        saveState('mm_links', data.links);
+        saveState('mm_challenge', data.challenge);
+        setTimeout(() => { isApplyingRemote.current = false; }, 50);
+      } else {
+        // No remote doc yet — push our defaults
+        if (isInitialLoad.current) {
+          saveWorkspace({ templates, links, challenge })
+            .then(() => setSyncStatus('synced'))
+            .catch(() => setSyncStatus('error'));
+        }
+      }
+      isInitialLoad.current = false;
+    });
+    return () => unsub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save to Firestore on local changes (debounced)
+  useEffect(() => {
+    saveState('mm_templates', templates);
+    saveState('mm_links', links);
+    saveState('mm_challenge', challenge);
+    if (isInitialLoad.current || isApplyingRemote.current) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveWorkspace({ templates, links, challenge })
+        .then(() => setSyncStatus('synced'))
+        .catch(() => setSyncStatus('error'));
+    }, 600);
+  }, [templates, links, challenge]);
 
   const handleCreateChallenge = useCallback((name: string, startDate: string) => {
     const messages: ScheduledMessage[] = templates
@@ -1100,7 +1143,16 @@ const App: React.FC = () => {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-16 flex-wrap gap-2">
-            <h1 className="text-xl font-bold text-gray-900">📨 מנהל מסרים שיווקיים</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-gray-900">📨 מנהל מסרים שיווקיים</h1>
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                syncStatus === 'synced' ? 'bg-green-100 text-green-700' :
+                syncStatus === 'connecting' ? 'bg-yellow-100 text-yellow-700' :
+                syncStatus === 'error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+              }`} title={syncStatus === 'synced' ? 'מסונכרן עם הצוות' : syncStatus === 'error' ? 'תקלת סנכרון' : 'מתחבר...'}>
+                {syncStatus === 'synced' ? '☁️ מסונכרן' : syncStatus === 'connecting' ? '⏳ מתחבר' : syncStatus === 'error' ? '⚠️ תקלה' : '📴 לא מחובר'}
+              </span>
+            </div>
             <nav className="flex gap-1 overflow-x-auto">
               {tabs.map(t => (
                 <button key={t.key} onClick={() => setTab(t.key)}
